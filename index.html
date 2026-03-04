@@ -2,8 +2,6 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" type="image/png" sizes="180x180" href="icon.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icon.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MaratonTrack</title>
 <style>
@@ -54,7 +52,7 @@
   .badge-green{background:var(--green-bg);color:var(--green)}
   .badge-yellow{background:var(--yellow-bg);color:var(--yellow)}
   .badge-red{background:var(--red-bg);color:var(--red)}
-  .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
   .stat-box{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:16px;text-align:center;box-shadow:var(--shadow)}
   .stat-val{font-size:1.3rem;font-weight:800;color:var(--primary);font-variant-numeric:tabular-nums}
   .stat-label{font-size:.7rem;color:var(--text2);font-weight:600;margin-top:4px;text-transform:uppercase}
@@ -92,6 +90,60 @@
 </style>
 </head>
 <body>
+<!-- LICENSE GUARD -->
+<div id="license-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a6fc4,#0d3d73);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:Segoe UI,system-ui,sans-serif;">
+  <div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:400px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.3);text-align:center;">
+    <div style="font-size:3rem;margin-bottom:8px;">&#127939;</div>
+    <div style="font-size:1.3rem;font-weight:800;color:#1a2740;margin-bottom:4px;">MaratonTrack</div>
+    <div style="font-size:.85rem;color:#5a7499;margin-bottom:24px;">Lizenzcode eingeben</div>
+    <label style="font-size:.8rem;font-weight:700;color:#5a7499;display:block;text-align:left;margin-bottom:6px;">Lizenzcode</label>
+    <input id="lic-input" type="text" placeholder="XXXXXX-XXXXXX-XXXXXX-..."
+      style="width:100%;padding:11px 14px;border:2px solid #c8d8ee;border-radius:10px;font-size:.9rem;outline:none;text-align:center;font-family:monospace;letter-spacing:1px;color:#1a2740;"
+      onkeydown="if(event.key==='Enter')checkLicense()">
+    <div id="lic-err" style="color:#c0392b;font-size:.8rem;margin-top:8px;min-height:18px;"></div>
+    <button onclick="checkLicense()" style="width:100%;margin-top:12px;padding:12px;background:#1a6fc4;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:800;cursor:pointer;">Zugang &rarr;</button>
+    <div id="lic-ok" style="display:none;margin-top:14px;background:#e6f7ef;border-radius:10px;padding:12px;font-size:.82rem;color:#1a9e5c;font-weight:600;"></div>
+  </div>
+</div>
+<script>
+var _SEC="MaratonTrack2025_XK9";
+async function _sha256(m){var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(m));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0");}).join("");}
+function _b64d(s){try{return decodeURIComponent(escape(atob(s)));}catch(e){return null;}}
+function _fd(s){return s.slice(6,8)+"/"+s.slice(4,6)+"/"+s.slice(0,4);}
+async function checkLicense(){
+  var raw=document.getElementById("lic-input").value.trim();
+  var err=document.getElementById("lic-err");
+  var ok=document.getElementById("lic-ok");
+  err.textContent="";ok.style.display="none";
+  try{
+    var b64=raw.replace(/-/g,"").replace(/ /g,"");
+    var full=_b64d(b64);
+    if(!full)throw "invalid";
+    var parts=full.split("|");
+    if(parts.length!==3)throw "invalid";
+    var empresa=parts[0],expiry=parts[1],check=parts[2];
+    var hash=await _sha256(empresa+"|"+expiry+_SEC);
+    if(hash.substring(0,8).toUpperCase()!==check)throw "tampered";
+    var exp=new Date(expiry.slice(0,4),expiry.slice(4,6)-1,expiry.slice(6,8));
+    var today=new Date();today.setHours(0,0,0,0);
+    var daysLeft=Math.ceil((exp-today)/86400000);
+    if(daysLeft<0)throw "expired";
+    sessionStorage.setItem("mt_lic_ok","1");
+    sessionStorage.setItem("mt_lic_empresa",empresa);
+    sessionStorage.setItem("mt_lic_expiry",_fd(expiry));
+    sessionStorage.setItem("mt_lic_days",daysLeft);
+    ok.innerHTML="Willkommen, <b>"+empresa+"</b><br>Lizenz gültig bis: "+_fd(expiry)+" &middot; <b>"+daysLeft+" Tage verbleibend</b>";
+    ok.style.display="block";
+    setTimeout(function(){document.getElementById("license-screen").style.display="none";},1800);
+  }catch(e){
+    if(String(e)==="expired"){err.textContent="Lizenz abgelaufen. Bitte kontaktieren Sie Ihren Anbieter.";}else if(String(e)==="tampered"){err.textContent="Ungültiger Code.";}else{err.textContent="Ungültiger Code. Bitte Eingabe prüfen.";}
+    var inp=document.getElementById("lic-input");inp.style.borderColor="#c0392b";
+    setTimeout(function(){inp.style.borderColor="#c8d8ee";},2000);
+  }
+}
+(function(){if(sessionStorage.getItem("mt_lic_ok")==="1"){document.getElementById("license-screen").style.display="none";}})();
+</script>
+<!-- END LICENSE GUARD -->
 
 <nav>
   <div class="nav-logo">🏃 <span>Maraton</span>Track</div>
@@ -121,9 +173,9 @@
   <div class="card">
     <div class="card-title">👤 Persönliche Daten</div>
     <label>Name des Läufers *</label>
-    <input type="text" id="f-nombre" placeholder="z.B.: Thomas Müller">
+    <input type="text" id="f-nombre" placeholder="z. B.: Max Mustermann">
     <div class="row2">
-      <div><label>Startnummer</label><input type="number" id="f-dorsal" placeholder="z.B.: 4521" min="1"></div>
+      <div><label>Startnummer</label><input type="number" id="f-dorsal" placeholder="z. B.: 4521" min="1"></div>
       <div><label>Geschlecht</label>
         <select id="f-sexo"><option value="">—</option><option value="M">Männlich</option><option value="F">Weiblich</option></select>
       </div>
@@ -131,10 +183,10 @@
   </div>
   <div class="card">
     <div class="card-title">🌍 Stadt / Rennen</div>
-    <p class="text2" style="margin-bottom:10px;">Stadt auswählen, um die Treffpunkte automatisch zu laden.</p>
+    <p class="text2" style="margin-bottom:10px;">Wählen Sie die Stadt, um die Treffpunkte automatisch zu laden.</p>
     <div class="city-grid" id="city-grid"></div>
     <label style="margin-top:14px;">Name des Rennens</label>
-    <input type="text" id="f-carrera" placeholder="z.B.: Berlin Marathon 2025">
+    <input type="text" id="f-carrera" placeholder="z. B.: Berlin-Marathon 2025">
   </div>
   <div class="card">
     <div class="card-title">⏱ Zielzeit und Start</div>
@@ -159,14 +211,14 @@
       <div><label>Berechnetes Tempo/km</label><input type="text" id="f-ritmo" readonly placeholder="—"></div>
     </div>
     <div class="row2">
-      <div><label>Offizieller Startzeit</label><input type="time" id="f-salida-oficial" step="1"></div>
+      <div><label>Offizielle Startzeit</label><input type="time" id="f-salida-oficial" step="1"></div>
       <div><label>Persönliche Startzeit (Chip)</label><input type="time" id="f-salida-personal" step="1" oninput="syncSalida()"></div>
     </div>
     <div id="diferencia-salida" class="alert alert-info" style="display:none;"></div>
   </div>
   <div class="card">
     <div class="card-title">📍 Treffpunkte</div>
-    <p class="text2" style="margin-bottom:12px;">KM und Straßenname, wo du den Läufer siehst. Wird automatisch sortiert.</p>
+    <p class="text2" style="margin-bottom:12px;">KM und Straßenname, wo Sie den Läufer sehen werden. Automatisch sortiert.</p>
     <div id="puntos-container"></div>
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn btn-outline btn-sm" onclick="addPunto()">+ Punkt hinzufügen</button>
@@ -183,7 +235,7 @@
 <div id="page-seguimiento" class="page">
   <div class="alert-landscape landscape-hint">
     <span style="font-size:1.4rem;">📱↔️</span>
-    <span>Für alle Informationen, drehe das Handy <b>horizontal</b></span>
+    <span>Für alle Informationen drehen Sie das Telefon in den <b>Querformat</b></span>
   </div>
   <div class="page-header">
     <div class="page-header-left">
@@ -196,14 +248,15 @@
     <div class="stat-box"><div class="stat-val" id="stat-tc">—</div><div class="stat-label">Laufzeit</div></div>
     <div class="stat-box"><div class="stat-val" id="stat-ra">—</div><div class="stat-label">Aktuelles Tempo</div></div>
     <div class="stat-box"><div class="stat-val" id="stat-mp">—</div><div class="stat-label">Ankunftszeit Ziel</div></div>
+    <div class="stat-box"><div class="stat-val" id="stat-marca-proj">—</div><div class="stat-label">Hochgerechnete Marke</div></div>
   </div>
   <div class="card">
-    <div class="card-title">📍 Treffpunkte — "Hier!" drücken wenn der Läufer vorbeikommt</div>
+    <div class="card-title">📍 Treffpunkte — drücken Sie "Hier!" wenn der Läufer passiert</div>
     <div style="overflow-x:auto;">
       <table class="km-table">
         <thead><tr>
           <th>Straße / Punkt</th><th>KM</th><th>Geplante Zeit</th>
-          <th>Echte Zeit</th><th>Differenz</th><th>Aktion</th>
+          <th>Tatsächliche Zeit</th><th>Differenz</th><th>Aktion</th>
         </tr></thead>
         <tbody id="seg-tabla"></tbody>
       </table>
@@ -221,26 +274,44 @@
 
 <!-- PRONOSTICO -->
 <div id="page-pronostico" class="page">
-  <h2 style="margin-bottom:4px;">Zielprognose</h2>
-  <p class="text2" style="margin-bottom:20px;">Aktuellen KM und Laufzeit eingeben, um die Zielankunft zu berechnen</p>
+  <h2 style="margin-bottom:4px;">Ankunftsprognose</h2>
+  <p class="text2" style="margin-bottom:20px;">Geben Sie den aktuellen KM und die Laufzeit ein, um die Ankunftszeit zu berechnen</p>
   <div class="card">
     <div class="card-title">👤 Läufer (optional)</div>
     <select id="prono-corredor" onchange="autoRellenarProno()">
-      <option value="">— Keinen Läufer ausgewählt —</option>
+      <option value="">— Kein Läufer ausgewählt —</option>
     </select>
-    <p class="text2" style="margin-top:8px;font-size:.77rem;">Wenn Verfolgung aktiv, wird der letzte registrierte Punkt automatisch eingetragen.</p>
+    <p class="text2" style="margin-top:8px;font-size:.77rem;">Wenn die Verfolgung aktiv ist, wird der letzte erfasste Punkt automatisch ausgefüllt.</p>
   </div>
   <div class="card">
     <div class="card-title">📊 Durchgangsdaten</div>
     <div class="row3">
       <div><label>Aktueller Kilometer</label><input type="number" id="prono-km" min="0.1" max="50" step="0.1" oninput="calcProno()"></div>
-      <div><label>Laufzeit (h:mm:ss)</label><input type="text" id="prono-t" placeholder="1:45:30" inputmode="numeric" oninput="calcProno()"></div>
-      <div><label>Gesamtdistanz (km)</label><input type="number" id="prono-dist" value="42.195" step="0.001" oninput="calcProno()"></div>
+      <div>
+        <label>Laufzeit</label>
+        <div class="marca-inputs">
+          <div>
+            <input type="number" id="prono-t-h" placeholder="0" min="0" max="9" inputmode="numeric" oninput="calcProno()">
+            <div class="marca-lbl">h</div>
+          </div>
+          <div class="marca-sep">:</div>
+          <div>
+            <input type="number" id="prono-t-m" placeholder="00" min="0" max="59" inputmode="numeric" oninput="calcProno()">
+            <div class="marca-lbl">min</div>
+          </div>
+          <div class="marca-sep">:</div>
+          <div>
+            <input type="number" id="prono-t-s" placeholder="00" min="0" max="59" inputmode="numeric" oninput="calcProno()">
+            <div class="marca-lbl">ss</div>
+          </div>
+        </div>
+      </div>
+      <div><label>Gesamtstrecke (km)</label><input type="number" id="prono-dist" value="42.195" step="0.001" oninput="calcProno()"></div>
     </div>
   </div>
   <div id="prono-res" style="display:none;">
     <div class="prono-result">
-      <div style="font-size:.85rem;opacity:.85;margin-bottom:8px;">⏱ Zielprognose</div>
+      <div style="font-size:.85rem;opacity:.85;margin-bottom:8px;">⏱ Ankunftsprognose</div>
       <div class="prono-time" id="prono-tm">—</div>
       <div style="font-size:.85rem;opacity:.8;margin-top:4px;">Geschätzte Gesamtzeit</div>
       <div class="sep" style="background:rgba(255,255,255,0.25);"></div>
@@ -275,9 +346,9 @@ const CIUDADES = {
     {km:34,calle:"Av. del Litoral"},{km:35,calle:"Carrer de la Marina 39"},
     {km:36,calle:"Passeig de Pujades"},{km:37,calle:"Ronda de Sant Pere 19"},
     {km:38,calle:"Av. de la Catedral"},{km:39,calle:"Passeig de Colom"},
-    {km:40,calle:"Av. del Parallel"},{km:42.195,calle:"META 🏁"}
+    {km:40,calle:"Av. del Parallel"},{km:42.195,calle:"ZIEL 🏁"}
   ]},
-  "Berlín":{flag:"🇩🇪",puntos:[
+  "Berlin":{flag:"🇩🇪",puntos:[
     {km:5,calle:"Alt Moabit"},{km:6,calle:"Alt Moabit"},{km:7,calle:"Otto von Bismarck Allee"},
     {km:8,calle:"Friedrichstraße"},{km:9,calle:"Torstraße"},{km:10,calle:"Torstraße"},
     {km:11,calle:"Otto-Braun-straße"},{km:12,calle:"Strausberger Platz"},
@@ -292,7 +363,7 @@ const CIUDADES = {
     {km:34,calle:"Kurfürstendamm"},{km:35,calle:"Tauentzienstr."},
     {km:36,calle:"Kleiststraße"},{km:37,calle:"Postdammer Straße"},
     {km:38,calle:"Postdamer Platz"},{km:39,calle:"Leipzieger Str."},
-    {km:40,calle:"Jerusalemer Str."},{km:42.195,calle:"META 🏁"}
+    {km:40,calle:"Jerusalemer Str."},{km:42.195,calle:"ZIEL 🏁"}
   ]},
   "Frankfurt":{flag:"🇩🇪",puntos:[
     {km:5,calle:"Bockenheimer Landstraße"},{km:6,calle:"Opernplatz"},{km:7,calle:"Kaiserstraße"},
@@ -311,9 +382,9 @@ const CIUDADES = {
     {km:33,calle:"Mainzer Landstraße 401"},{km:34,calle:"Mainzer Landstraße 251"},
     {km:35,calle:"Europaallee"},{km:36,calle:"Platz der Republik"},
     {km:37,calle:"Mainzer Landstraße"},{km:38,calle:"Junghofstraße"},
-    {km:39,calle:"Hauptwache"},{km:40,calle:"Fressgass"},{km:42.195,calle:"META 🏁"}
+    {km:39,calle:"Hauptwache"},{km:40,calle:"Fressgass"},{km:42.195,calle:"ZIEL 🏁"}
   ]},
-  "Londres":{flag:"🇬🇧",puntos:[
+  "London":{flag:"🇬🇧",puntos:[
     {km:5,calle:"John Wilson Street"},{km:6,calle:"Woolwich Church Street"},
     {km:7,calle:"Wollwich Road"},{km:8,calle:"Wollwich Road"},{km:9,calle:"Trafalgar Road"},
     {km:10,calle:"Trafalgar Road"},{km:11,calle:"Creek Road"},{km:12,calle:"Lower Road"},
@@ -328,9 +399,9 @@ const CIUDADES = {
     {km:35,calle:"The Highway"},{km:36,calle:"The Highway"},
     {km:37,calle:"Lower Thames Street"},{km:38,calle:"Upper Thames Street"},
     {km:39,calle:"Victoria Embankment"},{km:40,calle:"Great Georg Street"},
-    {km:42.195,calle:"META 🏁"}
+    {km:42.195,calle:"ZIEL 🏁"}
   ]},
-  "París":{flag:"🇫🇷",puntos:[
+  "Paris":{flag:"🇫🇷",puntos:[
     {km:5,calle:"Rue St-Antoine"},{km:6,calle:"R. du Faubourg St-Antonie"},
     {km:7,calle:"Rue De Reuilly"},{km:8,calle:"Avenue Daumesnil"},{km:9,calle:"Avenue Daumesnil"},
     {km:10,calle:"Av. de St.-Maurice"},{km:11,calle:"Av. de Daumesnil"},
@@ -348,7 +419,7 @@ const CIUDADES = {
     {km:34,calle:"Av. Porte de Auteul"},{km:35,calle:"Al. des Fortification"},
     {km:36,calle:"Al. des Fortification"},{km:37,calle:"Av. de St-Cloud"},
     {km:38,calle:"Allee de la Reine Marguerite"},{km:39,calle:"Allee de la Reine Marguerite"},
-    {km:40,calle:"Allee de Longchamp"},{km:42.195,calle:"META 🏁"}
+    {km:40,calle:"Allee de Longchamp"},{km:42.195,calle:"ZIEL 🏁"}
   ]},
   "Valencia":{flag:"🇪🇸",puntos:[
     {km:5,calle:"Avenida del Tarongers"},{km:6,calle:"Avenida del Tarongers"},
@@ -368,9 +439,9 @@ const CIUDADES = {
     {km:33,calle:"Calle Vall De la Ballestera"},{km:34,calle:"Avenida Pio Baroja"},
     {km:35,calle:"Avenida Tres Cruces"},{km:36,calle:"Avenida Tres Cruces"},
     {km:37,calle:"Calle del Archiduque Carlos"},{km:38,calle:"Avenida del Cid"},
-    {km:39,calle:"Calle Xàtiva"},{km:40,calle:"Cale Colom"},{km:42.195,calle:"META 🏁"}
+    {km:39,calle:"Calle Xàtiva"},{km:40,calle:"Cale Colom"},{km:42.195,calle:"ZIEL 🏁"}
   ]},
-  "Roma":{flag:"🇮🇹",puntos:[
+  "Rom":{flag:"🇮🇹",puntos:[
     {km:5,calle:"Viale Ostiense"},{km:6,calle:"Viale Ferdinando Baldelli, 41"},
     {km:7,calle:"Viale Marconi"},{km:8,calle:"Lungotevere di Pietra Papa"},
     {km:9,calle:"Lungotevere Vittorio Gassman"},{km:10,calle:"Largo Marzi"},
@@ -389,7 +460,7 @@ const CIUDADES = {
     {km:34,calle:"Lungotevere Flaminio, 4"},{km:35,calle:"Lungotevere Arnaldo da Brescia"},
     {km:36,calle:"Via di Monte Brianzo, 12"},{km:37,calle:"Corso Vittorio Emanuele II, 91"},
     {km:38,calle:"Via del Corso, 340"},{km:39,calle:"Via del Corso, 519"},
-    {km:40,calle:"Piazza di Spagna"},{km:42.195,calle:"META 🏁"}
+    {km:40,calle:"Piazza di Spagna"},{km:42.195,calle:"ZIEL 🏁"}
   ]},
   "Sevilla":{flag:"🇪🇸",puntos:[
     {km:5,calle:"Paseo de las Delicias"},{km:6,calle:"Glorieta de San Diego"},
@@ -410,7 +481,7 @@ const CIUDADES = {
     {km:35,calle:"C. Juan de Mata Carriazo 5"},{km:36,calle:"C. Luis Montoto, 2-10"},
     {km:37,calle:"Rda. de Capuchinos, 37-35"},{km:38,calle:"Avenida de la Buharia"},
     {km:39,calle:"Avenida Eduardo Dato"},{km:40,calle:"C. Tetuán, 19, Casco Antiguo"},
-    {km:42.195,calle:"META 🏁"}
+    {km:42.195,calle:"ZIEL 🏁"}
   ]},
   "Málaga":{flag:"🇪🇸",puntos:[
     {km:5,calle:"Paseo Marítimo Antonio Machado"},{km:6,calle:"Zona del Puerto de Málaga"},
@@ -431,9 +502,9 @@ const CIUDADES = {
     {km:35,calle:"Playa de Pedregalejo"},{km:36,calle:"Playa del Palo"},
     {km:37,calle:"Paseo Marítimo de El Palo"},{km:38,calle:"Paseo Marítimo Pablo Ruiz Picasso"},
     {km:39,calle:"Paseo Marítimo Pablo Ruiz Picasso"},{km:40,calle:"Paseo del Parque"},
-    {km:42.195,calle:"META 🏁"}
+    {km:42.195,calle:"ZIEL 🏁"}
   ]},
-  "Hamburgo":{flag:"🇩🇪",puntos:[
+  "Hamburg":{flag:"🇩🇪",puntos:[
     {km:5,calle:"Elbchausee"},{km:6,calle:"Othmarschen"},{km:7,calle:"Hohenesch"},
     {km:8,calle:"Große Elbstraße"},{km:9,calle:"Fischauktionshalle"},
     {km:10,calle:"Kreuzfahrtterminal"},{km:11,calle:"Rotherbaum"},
@@ -451,7 +522,7 @@ const CIUDADES = {
     {km:34,calle:"Hamburger Meile"},{km:35,calle:"Lübecker Straße"},
     {km:36,calle:"Außenalster Nordufer"},{km:37,calle:"Rothenbaumchaussee"},
     {km:38,calle:"Dammtor"},{km:39,calle:"Planten und Blomen"},
-    {km:40,calle:"Messehallen"},{km:42.195,calle:"META 🏁"}
+    {km:40,calle:"Messehallen"},{km:42.195,calle:"ZIEL 🏁"}
   ]},
   "Tokio":{flag:"🇯🇵",puntos:[
     {km:10,calle:"Hibiya / Chiyoda"},{km:11,calle:"35.70406, 139.77195"},
@@ -469,9 +540,9 @@ const CIUDADES = {
     {km:34,calle:"35.67461, 139.75939"},{km:35,calle:"35.66670, 139.75420"},
     {km:36,calle:"35.65821, 139.75051"},{km:37,calle:"35.64926, 139.74906"},
     {km:38,calle:"35.64926, 139.74895"},{km:39,calle:"35.65821, 139.75040"},
-    {km:40,calle:"35.66672, 139.75407"},{km:42.195,calle:"META 🏁"}
+    {km:40,calle:"35.66672, 139.75407"},{km:42.195,calle:"ZIEL 🏁"}
   ]},
-  "Nueva York":{flag:"🇺🇸",puntos:[
+  "New York":{flag:"🇺🇸",puntos:[
     {km:10,calle:"Fourth Ave. - 19th St"},{km:11,calle:"Fourth Ave. - 11th St"},
     {km:12,calle:"Fourth Ave. - Degraw St"},{km:13,calle:"Lafayette Avenue"},
     {km:14,calle:"Lafayette Avenue"},{km:15,calle:"Bedford Avenue"},
@@ -488,7 +559,7 @@ const CIUDADES = {
     {km:36,calle:"East Drive (Central Park)"},{km:37,calle:"West Drive (Central Park)"},
     {km:38,calle:"Central Park South - 59th St"},
     {km:39,calle:"Columbus Circle"},{km:40,calle:"Central Park"},
-    {km:42.195,calle:"META 🏁"}
+    {km:42.195,calle:"ZIEL 🏁"}
   ]}
 };
 
@@ -554,25 +625,25 @@ function selCiudad(name){
   const btn=document.getElementById('cbtn-'+name);if(btn)btn.classList.add('sel');
   const fc=document.getElementById('f-carrera');
   if(!fc.value||Object.keys(CIUDADES).some(c=>fc.value.includes(c)))
-    fc.value='Marathon von '+name+' 2025';
+    fc.value='Marathon '+name+' 2025';
   pt=CIUDADES[name].puntos.map(p=>({km:p.km,calle:p.calle}));
   rPF();
 }
 
 function rL(){
   const el=document.getElementById('lista-corredores');
-  if(!C.length){el.innerHTML='<div class="empty"><div class="empty-icon">🏃</div><p>Noch keine Läufer vorhanden.<br>Klicke <b>"+ Neuer Läufer"</b> zum Starten.</p></div>';return;}
+  if(!C.length){el.innerHTML='<div class="empty"><div class="empty-icon">🏃</div><p>Noch keine Läufer.<br>Drücken Sie <b>"+ Neuer Läufer"</b>, um zu beginnen.</p></div>';return;}
   el.innerHTML=C.map((c,i)=>{
     const p=(c.pasos||[]).filter(x=>x.horaReal).length,tt=(c.pasos||[]).length;
     const b=p===0?'<span class="badge badge-yellow">Nicht gestartet</span>':
-             p>=tt?'<span class="badge badge-green">Ziel erreicht ✓</span>':
+             p>=tt?'<span class="badge badge-green">Fertig ✓</span>':
              '<span class="badge badge-red">Im Rennen · '+p+'/'+tt+'</span>';
     const flag=c.ciudad&&CIUDADES[c.ciudad]?CIUDADES[c.ciudad].flag+' ':'🏙️ ';
     return '<div class="runner-item">'+
       '<div class="runner-avatar">'+c.nombre.charAt(0).toUpperCase()+'</div>'+
       '<div class="runner-info">'+
         '<div class="runner-name">'+c.nombre+(c.dorsal?' <span style="color:var(--text2);font-size:.8rem;">#'+c.dorsal+'</span>':'')+'</div>'+
-        '<div class="runner-sub">'+flag+(c.carrera||'—')+' · Zielzeit: '+(c.marca||'—')+' · '+(c.ritmo||'—')+'/km</div>'+
+        '<div class="runner-sub">'+flag+(c.carrera||'—')+' · Ziel: '+(c.marca||'—')+' · '+(c.ritmo||'—')+'/km</div>'+
         '<div style="margin-top:5px;">'+b+'</div>'+
       '</div>'+
       '<div class="runner-actions">'+
@@ -583,7 +654,7 @@ function rL(){
   }).join('');
 }
 
-function bC(i){if(confirm('Löschen: "'+C[i].nombre+'"?')){C.splice(i,1);sv();rL();}}
+function bC(i){if(confirm('"'+C[i].nombre+'" löschen?')){C.splice(i,1);sv();rL();}}
 
 function nuevoCorreder(){
   ca=null;ciudadSel=null;
@@ -670,7 +741,7 @@ function aS(i){
   ca=i;const c=C[i];
   document.getElementById('seg-nombre').textContent=c.nombre+(c.dorsal?' #'+c.dorsal:'');
   const flag=c.ciudad&&CIUDADES[c.ciudad]?CIUDADES[c.ciudad].flag+' ':'';
-  document.getElementById('seg-sub').textContent=flag+(c.carrera||'')+' · Zielzeit: '+(c.marca||'—')+' ('+(c.ritmo||'—')+'/km)';
+  document.getElementById('seg-sub').textContent=flag+(c.carrera||'')+' · Ziel: '+(c.marca||'—')+' ('+(c.ritmo||'—')+'/km)';
   rS();showPage('seguimiento');
   clearInterval(timerSeg);timerSeg=setInterval(tick,1000);tick();
 }
@@ -690,11 +761,13 @@ function tick(){
       const r=tc/u.km;
       document.getElementById('stat-ra').textContent=fm(r)+'/km';
       document.getElementById('stat-mp').textContent=s2t(t2s(c.salidaOficial)+r*KM);
+      document.getElementById('stat-marca-proj').textContent=fh(r*KM);
     }
   }else{
     const ms=ph(c.marca);
     if(ms)document.getElementById('stat-mp').textContent=s2t(t2s(c.salidaOficial)+ms);
     document.getElementById('stat-ra').textContent=c.ritmo?c.ritmo+'/km':'—';
+    const msp=ph(c.marca);if(msp)document.getElementById('stat-marca-proj').textContent=fh(msp);
   }
 }
 
@@ -727,9 +800,9 @@ function rS(){
     const ms=ph(c.marca);
     if(ms){
       const d=tf-ms,el=document.getElementById('seg-meta-d');
-      if(Math.abs(d)<=30)el.innerHTML='<span class="badge badge-green">🎯 Zielzeit erreicht! '+c.marca+'</span>';
-      else if(d>0)el.innerHTML='<span class="badge badge-red">+'+fh(d)+' über der Zielzeit</span>';
-      else el.innerHTML='<span class="badge badge-green">🎉 '+fh(-d)+' unter der Zielzeit</span>';
+      if(Math.abs(d)<=30)el.innerHTML='<span class="badge badge-green">🎯 Im Ziel! '+c.marca+'</span>';
+      else if(d>0)el.innerHTML='<span class="badge badge-red">+'+fh(d)+' über Zielzeit</span>';
+      else el.innerHTML='<span class="badge badge-green">🎉 '+fh(-d)+' unter Zielzeit</span>';
     }
   }else mc.style.display='none';
 }
@@ -748,7 +821,7 @@ function resP(i){
 
 function rPS(){
   const s=document.getElementById('prono-corredor');
-  s.innerHTML='<option value="">— Keinen Läufer ausgewählt —</option>'+
+  s.innerHTML='<option value="">— Kein Läufer ausgewählt —</option>'+
     C.map((c,i)=>'<option value="'+i+'">'+c.nombre+(c.dorsal?' #'+c.dorsal:'')+(c.carrera?' — '+c.carrera:'')+'</option>').join('');
 }
 function autoRellenarProno(){
@@ -758,13 +831,19 @@ function autoRellenarProno(){
   if(ch.length&&c.salidaOficial){
     const u=ch[ch.length-1],tc=u.horaRealSecs-t2s(c.salidaOficial);
     document.getElementById('prono-km').value=u.km;
-    document.getElementById('prono-t').value=fh(tc);
+    const _tc=Math.round(tc);
+    document.getElementById('prono-t-h').value=Math.floor(_tc/3600);
+    document.getElementById('prono-t-m').value=pad(Math.floor((_tc%3600)/60));
+    document.getElementById('prono-t-s').value=pad(_tc%60);
   }
   calcProno();
 }
 function calcProno(){
   const km=parseFloat(document.getElementById('prono-km').value);
-  const ts=ph(document.getElementById('prono-t').value);
+  const _ph=parseInt(document.getElementById('prono-t-h').value)||0;
+  const _pm=parseInt(document.getElementById('prono-t-m').value)||0;
+  const _ps=parseInt(document.getElementById('prono-t-s').value)||0;
+  const ts=(_ph*3600+_pm*60+_ps)||0;
   const dist=parseFloat(document.getElementById('prono-dist').value)||KM;
   const el=document.getElementById('prono-res');
   if(!km||!ts||km<=0||km>dist||ts<=0){el.style.display='none';return;}
@@ -782,9 +861,9 @@ function calcProno(){
     if(ms){
       vs.style.display='block';
       const d=tot-ms,e=document.getElementById('prono-vs-t');
-      if(Math.abs(d)<=30)e.innerHTML='<span class="badge badge-green">🎯 Im Zielzeitbereich: '+fh(tot)+' vs '+c.marca+'</span>';
-      else if(d>0)e.innerHTML='<span class="badge badge-red">+'+fh(d)+' über der Zielzeit ('+c.marca+')</span>';
-      else e.innerHTML='<span class="badge badge-green">🔥 '+fh(-d)+' unter der Zielzeit ('+c.marca+')</span>';
+      if(Math.abs(d)<=30)e.innerHTML='<span class="badge badge-green">🎯 Im Zieltempo: '+fh(tot)+' vs '+c.marca+'</span>';
+      else if(d>0)e.innerHTML='<span class="badge badge-red">+'+fh(d)+' über Zielzeit ('+c.marca+')</span>';
+      else e.innerHTML='<span class="badge badge-green">🔥 '+fh(-d)+' unter Zielzeit ('+c.marca+')</span>';
     }else vs.style.display='none';
   }else vs.style.display='none';
   el.style.display='block';
