@@ -283,7 +283,7 @@ async function checkLicense(){
     <select id="prono-corredor" onchange="autoRellenarProno()">
       <option value="">— Kein Läufer ausgewählt —</option>
     </select>
-    <p class="text2" style="margin-top:8px;font-size:.77rem;">Wenn die Verfolgung aktiv ist, wird der letzte erfasste Punkt automatisch ausgefüllt.</p>
+    <p class="text2" style="margin-top:8px;font-size:.77rem;">Wenn die Begleitung aktiv ist, wird der letzte erfasste Punkt automatisch ausgefüllt.</p>
   </div>
   <div class="card">
     <div class="card-title">📊 Durchgangsdaten</div>
@@ -650,7 +650,7 @@ function rL(){
       '</div>'+
       '<div class="runner-actions">'+
         '<button class="btn btn-outline btn-sm" onclick="eC('+i+')">✏️ Bearbeiten</button>'+
-        '<button class="btn btn-primary btn-sm" onclick="aS('+i+')">📍 Verfolgen</button>'+
+        '<button class="btn btn-primary btn-sm" onclick="aS('+i+')">📍 Folgen</button>'+
         '<button class="btn btn-danger btn-sm" onclick="bC('+i+')">🗑</button>'+
       '</div></div>';
   }).join('');
